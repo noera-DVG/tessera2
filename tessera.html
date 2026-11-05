@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tessera</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2b2d2e;color:#c8cacb;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px;line-height:1.5;min-height:100vh}
+a{color:#5a8a6a;text-decoration:none}
+a:hover{color:#6a9a7a}
+header{padding:16px 20px 12px;border-bottom:1px solid #3e4042}
+h1{font-size:15px;font-weight:600;letter-spacing:.5px;margin-bottom:12px}
+h1 span{color:#5a8a6a}
+.search-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.search-row input[type=text]{flex:1;min-width:200px;background:#222425;border:1px solid #3e4042;color:#c8cacb;padding:7px 10px;border-radius:3px;font-size:13px;outline:none;transition:border-color .15s}
+.search-row input[type=text]:focus{border-color:#5a8a6a}
+.search-row input::placeholder{color:#7a7d7e}
+.search-row button{background:#5a8a6a;color:#1a1b1c;border:none;padding:7px 16px;border-radius:3px;font-size:13px;cursor:pointer;transition:background .15s}
+.search-row button:hover{background:#6a9a7a}
+.free-check{display:flex;align-items:center;gap:5px;font-size:12px;color:#7a7d7e;cursor:pointer;white-space:nowrap}
+.free-check input{accent-color:#5a8a6a}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.preset{background:#333536;border:1px solid #3e4042;color:#c8cacb;padding:5px 12px;border-radius:3px;font-size:12px;cursor:pointer;transition:background .15s,border-color .15s}
+.preset:hover{background:#3a3c3d;border-color:#5a8a6a;color:#6a9a7a}
+.preset.active{background:#5a8a6a;color:#1a1b1c;border-color:#5a8a6a}
+main{padding:16px 20px}
+#status{font-size:12px;margin-bottom:12px;min-height:18px;word-break:break-all;color:#7a7d7e}
+#status.error{color:#c96a6a}
+.result-row{display:grid;grid-template-columns:48px 1fr 90px 60px 36px 70px;gap:10px;align-items:center;padding:10px 12px;background:#333536;border:1px solid #3e4042;border-radius:3px;margin-bottom:6px;transition:border-color .15s}
+.result-row:hover{border-color:#4e5052}
+.result-row.playing{border-color:#5a8a6a}
+.thumb{width:48px;height:48px;background:#222425;border-radius:2px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .icon{font-size:18px;color:#7a7d7e}
+.title{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.uploader,.license{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#7a7d7e}
+.runtime{font-size:12px;color:#7a7d7e;text-align:right}
+.play-btn{width:32px;height:32px;border-radius:3px;border:none;background:#3e4042;color:#c8cacb;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.play-btn:hover{background:#4e5052}
+.play-btn.playing{background:#5a8a6a;color:#1a1b1c}
+.dl-btn{background:transparent;border:1px solid #5a8a6a;color:#5a8a6a;padding:5px 10px;border-radius:3px;font-size:11px;cursor:pointer;transition:background .15s,color .15s}
+.dl-btn:hover{background:#5a8a6a;color:#1a1b1c}
+.tip{padding:16px 20px;margin-top:24px;border-top:1px solid #3e4042}
+.tip h3{font-size:13px;font-weight:600;margin-bottom:8px;color:#c8cacb}
+.tip ol{padding-left:20px;margin-bottom:10px}
+.tip li{margin-bottom:4px;font-size:12px;color:#7a7d7e}
+.note{font-size:11px;color:#5a8a6a;margin-top:8px;font-style:italic}
+.no-results{text-align:center;padding:40px 20px;color:#7a7d7e;font-size:13px}
+@media(max-width:700px){.result-row{grid-template-columns:48px 1fr 32px 70px;gap:6px}.license,.runtime{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Tessera<span>.</span></h1>
+  <div class="search-row">
+    <input type="text" id="searchInput" placeholder="Search audio on archive.org…" spellcheck="false">
+    <button id="searchBtn">Search</button>
+    <label class="free-check"><input type="checkbox" id="freeOnly" checked> Free to use</label>
+  </div>
+  <div class="presets" id="presets">
+    <button class="preset" data-q="drum breaks">Drum Breaks</button>
+    <button class="preset" data-q="loops">Loops</button>
+    <button class="preset" data-q="808">808s</button>
+    <button class="preset" data-q="vocal chops">Vocal Chops</button>
+    <button class="preset" data-q="percussion">Percussion</button>
+    <button class="preset" data-q="ambient">Ambient</button>
+    <button class="preset" data-q="hip hop">Hip Hop</button>
+    <button class="preset" data-q="jazz">Jazz</button>
+  </div>
+</header>
+<main>
+  <div id="status"></div>
+  <div id="results"></div>
+</main>
+<section class="tip">
+  <h3>Import into Ableton Live</h3>
+  <ol>
+    <li>Download the file (saves to your Downloads folder).</li>
+    <li>Drag it onto an audio track in the Arrangement view, or drop it into a clip slot in Session view.</li>
+    <li>Double‑click the clip to open Clip View, then chop, slice, and warp from there.</li>
+  </ol>
+  <p class="note">Tip: In Clip View, set Warp to “Beats” for drums, or “Complex” for melodic loops. Changes tempo without pitch‑shifting.</p>
+</section>
+<script>
+(function(){
+  "use strict";
+
+  const $search   = document.getElementById("searchInput");
+  const $btn      = document.getElementById("searchBtn");
+  const $free     = document.getElementById("freeOnly");
+  const $status   = document.getElementById("status");
+  const $results  = document.getElementById("results");
+  const $presets  = document.getElementById("presets");
+
+  // shared audio element – only one clip plays at a time
+  const player = new Audio();
+  let playingRow = null; // DOM element of the currently playing row
+
+  function setStatus(msg, err){
+    $status.textContent = msg || "";
+    $status.style.color = err ? "#c96a6a" : "#7a7d7e";
+  }
+
+  function esc(str){
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
+
+  // ---------- licence helpers --------------------------------------------
+  function getLicenseText(doc){
+    let url = doc.licenseurl;
+    if(Array.isArray(url)) url = url[0] || "";
+    if(!url) return "";
+    if(/publicdomain\/zero/.test(url)) return "CC0";
+    if(/by-nc-nd/.test(url))       return "CC BY-NC-ND";
+    if(/by-nc/.test(url))          return "CC BY-NC";
+    if(/by\//.test(url))           return "CC BY";
+    if(/publicdomain/.test(url))   return "Public Domain";
+    return "CC";
+  }
+
+  function isFreeLicense(doc){
+    let url = doc.licenseurl;
+    if(Array.isArray(url)) url = url[0] || "";
+    if(!url) return true; // treat missing licence as free
+    return /publicdomain|creativecommons\.org\/licenses\/by/.test(url);
+  }
+
+  function formatRuntime(v){
+    if(!v) return "";
+    const n = parseFloat(v);
+    if(isNaN(n)) return String(v);
+    if(n < 120) return Math.round(n) + "s";
+    const m = Math.floor(n/60);
+    const s = Math.round(n%60);
+    return m+":"+(s<10?"0":"")+s;
+  }
+
+  // ---------- search -----------------------------------------------------
+  function buildQuery(user){
+    let q = "mediatype:audio";
+    if(user && user.trim()){
+      q += " AND " + user.trim().toLowerCase();
+    }
+    return q;
+  }
+
+  async function doSearch(term){
+    setStatus("Searching archive.org…");
+    $results.innerHTML = "";
+    const api = "https://archive.org/advancedsearch.php?q=" + encodeURIComponent(buildQuery(term)) +
+      "&fl[]=identifier,mediatype,title,creator,runtime,licenseurl" +
+      "&rows=20&output=json&sort[]=downloads%20desc";
+    try {
+      const resp = await fetch(api);
+      if(!resp.ok) throw new Error(resp.status+" "+resp.statusText);
+      const data = await resp.json();
+      let docs = (data.response && data.response.docs) ? data.response.docs : [];
+
+      // client‑side free filter
+      if($free.checked){
+        const filtered = docs.filter(isFreeLicense);
+        if(filtered.length) docs = filtered; // keep filtered set only when it yields results
+      }
+
+      if(docs.length===0){
+        $results.innerHTML = '<div class="no-results">No results found.</div>';
+        setStatus("");
+        return;
+      }
+
+      const frag = document.createDocumentFragment();
+      docs.forEach(doc=>{
+        const row = document.createElement('div');
+        row.className='result-row';
+        // thumbnail
+        const thumb = document.createElement('div');
+        thumb.className='thumb';
+        const img = document.createElement('img');
+        img.src = `https://archive.org/services/img/${doc.identifier}`;
+        img.onerror = function(){ thumb.innerHTML='<span class="icon">♫</span>'; };
+        thumb.appendChild(img);
+        // title + uploader
+        const titleDiv = document.createElement('div');
+        titleDiv.className='title';
+        titleDiv.textContent = doc.title || '(no title)';
+        const uploaderDiv = document.createElement('div');
+        uploaderDiv.className='uploader';
+        uploaderDiv.textContent = doc.creator || '';
+        // licence badge
+        const licDiv = document.createElement('div');
+        licDiv.className='license';
+        licDiv.textContent = getLicenseText(doc);
+        // runtime
+        const rtDiv = document.createElement('div');
+        rtDiv.className='runtime';
+        rtDiv.textContent = formatRuntime(doc.runtime);
+        // play button
+        const playBtn = document.createElement('button');
+        playBtn.className='play-btn';
+        playBtn.title='Play / Stop';
+        playBtn.innerHTML='▶️';
+        // download button (will be filled later)
+        const dlBtn = document.createElement('a');
+        dlBtn.className='dl-btn';
+        dlBtn.textContent='Save';
+        dlBtn.href='#';
+        dlBtn.target='_blank';
+
+        // assemble row
+        row.append(thumb, titleDiv, licDiv, rtDiv, playBtn, dlBtn);
+        frag.appendChild(row);
+
+        // ----- playback handling ---------------------------------------
+        playBtn.addEventListener('click', async () => {
+          if(playingRow===row){
+            player.pause();
+            playingRow.classList.remove('playing');
+            playBtn.classList.remove('playing');
+            playBtn.innerHTML='▶️';
+            playingRow = null;
+            return;
+          }
+          // stop any current playback
+          if(playingRow){
+            player.pause();
+            const prevPlay = playingRow.querySelector('.play-btn');
+            if(prevPlay){prevPlay.classList.remove('playing');prevPlay.innerHTML='▶️';}
+            playingRow.classList.remove('playing');
+          }
+          // fetch metadata to locate a playable file
+          try {
+            const metaResp = await fetch(`https://archive.org/metadata/${doc.identifier}`);
+            if(!metaResp.ok) throw new Error('metadata error');
+            const meta = await metaResp.json();
+            const files = meta.files || [];
+            // find first acceptable format
+            const fmt = files.find(f=> /\.(mp3|ogg|flac|wav)$/i.test(f.name));
+            if(!fmt){
+              setStatus('No playable file on this item — use Save to download.', false);
+              return;
+            }
+            const srcUrl = `https://archive.org/download/${doc.identifier}/${fmt.name}`;
+            player.src = srcUrl;
+            await player.play();
+            // UI updates
+            row.classList.add('playing');
+            playBtn.classList.add('playing');
+            playBtn.innerHTML='⏹';
+            playingRow = row;
+          } catch(e){
+            console.error(e);
+            setStatus('Failed to load audio.', true);
+          }
+        });
+
+        // ----- download handling ---------------------------------------
+        dlBtn.addEventListener('click', async ev => {
+          ev.preventDefault();
+          try {
+            const metaResp = await fetch(`https://archive.org/metadata/${doc.identifier}`);
+            if(!metaResp.ok) throw new Error('metadata error');
+            const meta = await metaResp.json();
+            const files = meta.files || [];
+            const fmt = files.find(f=> /\.(mp3|ogg|flac|wav)$/i.test(f.name));
+            if(fmt){
+              const dlUrl = `https://archive.org/download/${doc.identifier}/${fmt.name}`;
+              window.open(dlUrl, '_blank');
+            } else {
+              // fallback to item page
+              window.open(`https://archive.org/details/${doc.identifier}`, '_blank');
+            }
+          } catch(e){
+            console.error(e);
+            setStatus('Download failed.', true);
+          }
+        });
+      });
+      $results.appendChild(frag);
+      setStatus(`${docs.length} results found.`);
+    } catch(err){
+      console.error(err);
+      setStatus(`Error: ${err.message}`, true);
+    }
+  }
+
+  // ---------- UI wiring -------------------------------------------------
+  $btn.addEventListener('click',()=>doSearch($search.value));
+  $search.addEventListener('keypress',e=>{ if(e.key==='Enter') doSearch($search.value); });
+  $free.addEventListener('change',()=>doSearch($search.value));
+
+  // preset buttons – use event delegation for simplicity
+  $presets.addEventListener('click', e => {
+    const btn = e.target.closest('.preset');
+    if(!btn) return;
+    const q = btn.dataset.q || '';
+    $search.value = q;
+    doSearch(q);
+  });
+
+  // stop playback when user leaves the page (optional safety)
+  window.addEventListener('beforeunload',()=>{ player.pause(); });
+})();
+</script>
+</body>
+</html>
