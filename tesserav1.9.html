@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tessera</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2b2d2e;color:#c8cacb;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px;line-height:1.5;min-height:100vh}
+a{color:#5a8a6a;text-decoration:none}a:hover{color:#6a9a7a}
+header{padding:16px 20px 12px;border-bottom:1px solid #3e4042}
+h1{font-size:15px;font-weight:600;letter-spacing:.5px;margin-bottom:12px}h1 span{color:#5a8a6a}
+.search-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.search-row input[type=text]{flex:1;min-width:200px;background:#222425;border:1px solid #3e4042;color:#c8cacb;padding:7px 10px;border-radius:3px;font-size:13px;outline:none;transition:border-color .15s}
+.search-row input[type=text]:focus{border-color:#5a8a6a}
+.search-row input::placeholder{color:#7a7d7e}
+.search-row button,.preset{background:#5a8a6a;color:#1a1b1c;border:none;padding:7px 16px;border-radius:3px;font-size:13px;cursor:pointer;transition:background .15s}
+.search-row button:hover,.preset:hover{background:#6a9a7a}
+.free-check{display:flex;align-items:center;gap:5px;font-size:12px;color:#7a7d7e;cursor:pointer;white-space:nowrap}
+.free-check input{accent-color:#5a8a6a}
+.extra-buttons{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.preset{background:#333536;border:1px solid #3e4042;color:#c8cacb;padding:5px 12px;border-radius:3px;font-size:12px;cursor:pointer;transition:background .15s,border-color .15s}
+.preset:hover{background:#3a3c3d;border-color:#5a8a6a;color:#6a9a7a}
+.fav-btn{background:none;border:none;color:#5a8a6a;font-size:16px;cursor:pointer;margin-left:4px}
+.fav-btn.active{color:#ffdd00}
+.preset.active{background:#5a8a6a;color:#1a1b1c;border-color:#5a8a6a}
+main{padding:16px 20px}
+#status{font-size:12px;margin-bottom:12px;min-height:18px;word-break:break-all;color:#7a7d7e}
+#status.error{color:#c96a6a}
+.result-row{display:grid;grid-template-columns:48px 1fr 90px 60px 36px 70px;gap:10px;align-items:center;padding:10px 12px;background:#333536;border:1px solid #3e4042;border-radius:3px;margin-bottom:6px;transition:border-color .15s}
+.result-row:hover{border-color:#4e5052}.result-row.playing{border-color:#5a8a6a}
+.thumb{width:48px;height:48px;background:#222425;border-radius:2px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover}.thumb .icon{font-size:18px;color:#7a7d7e}
+.title{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.uploader,.license{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#7a7d7e}
+.runtime{font-size:12px;color:#7a7d7e;text-align:right}
+.play-btn{width:32px;height:32px;border-radius:3px;border:none;background:#3e4042;color:#c8cacb;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.play-btn:hover{background:#4e5052}.play-btn.playing{background:#5a8a6a;color:#1a1b1c}
+.dl-btn{background:transparent;border:1px solid #5a8a6a;color:#5a8a6a;padding:5px 10px;border-radius:3px;font-size:11px;cursor:pointer;transition:background .15s,color .15s}
+.dl-btn:hover{background:#5a8a6a;color:#1a1b1c}
+.tip{padding:16px 20px;margin-top:24px;border-top:1px solid #3e4042}
+.tip h3{font-size:13px;font-weight:600;margin-bottom:8px;color:#c8cacb}
+.tip ol{padding-left:20px;margin-bottom:10px}.tip li{margin-bottom:4px;font-size:12px;color:#7a7d7e}
+.note{font-size:11px;color:#5a8a6a;margin-top:8px;font-style:italic}
+.no-results{text-align:center;padding:40px 20px;color:#7a7d7e;font-size:13px}
+#waveform{width:100%;max-width:800px;height:80px;border:1px solid #3e4042;margin-top:12px;display:none}
+@media(max-width:700px){.result-row{grid-template-columns:48px 1fr 32px 70px;gap:6px}.license,.runtime{display:none}}
+.now-playing{display:flex;align-items:center;justify-content:space-between;padding:8px 20px;background:#333536;color:#c8cacb;border-bottom:1px solid #3e4042;}#stopBtn{background:#5a8a6a;color:#1a1b1c;border:none;padding:5px 12px;border-radius:3px;cursor:pointer;font-size:13px;margin-left:10px;}#stopBtn:hover{background:#6a9a7a}
+</style>
+</head>
+<body>
+<header>
+  <h1>Tessera<span>.</span></h1>
+  <div class="search-row">
+    <input type="text" id="searchInput" placeholder="Search audio on archive.org…" spellcheck="false">
+    <button id="searchBtn">Search</button>
+    <label class="free-check"><input type="checkbox" id="freeOnly" checked> Free to use</label>
+  </div>
+  <!-- Preset/category buttons removed as requested -->
+  <div class="extra-buttons">
+    <button class="preset" id="hitMeBtn">Hit Me</button>
+    <button class="preset" id="ohyhuuupBtn">Ohyhuup</button>
+    <button class="preset" id="recentBtn">Recent</button>
+    <button class="preset" id="favBtn">Favorites</button>
+  </div>
+</header>
+<div id="nowPlaying" class="now-playing" style="display:none;">
+  <span id="nowPlayingTitle"></span>
+  <span id="nowTime" style="margin-left:12px; color:#7a7d7e;"></span>
+  <button id="stopBtn">Stop</button>
+</div>
+<main>
+  <div id="status"></div>
+  <canvas id="waveform"></canvas>
+  <div id="results"></div>
+</main>
+<section class="tip">
+  <h3>Import into Ableton Live</h3>
+  <ol>
+    <li>Download the file (saves to your Downloads folder).</li>
+    <li>Drag it onto an audio track in the Arrangement view, or drop it into a clip slot in Session view.</li>
+    <li>Double‑click the clip to open Clip View, then chop, slice, and warp from there.</li>
+  </ol>
+  <p class="note">Tip: In Clip View, set Warp to “Beats” for drums, or “Complex” for melodic loops. Changes tempo without pitch‑shifting.</p>
+</section>
+<script>
+(function(){
+  "use strict";
+
+  const $search   = document.getElementById("searchInput");
+  const $btn      = document.getElementById("searchBtn");
+  const $free     = document.getElementById("freeOnly");
+  const $status   = document.getElementById("status");
+  const $results  = document.getElementById("results");
+  // No $presets reference – category buttons removed
+  const $hitMe    = document.getElementById("hitMeBtn");
+  const $ohyhuuup = document.getElementById("ohyhuuupBtn");
+  const $recentBtn = document.getElementById("recentBtn");
+  const $favBtn = document.getElementById("favBtn");
+  const $waveform = document.getElementById("waveform");
+  const $nowPlaying = document.getElementById("nowPlaying");
+  const $nowTitle = document.getElementById("nowPlayingTitle");
+  const $stopBtn = document.getElementById("stopBtn");
+  const $nowTime = document.getElementById("nowTime");
+
+  const player = new Audio();
+player.addEventListener('ended',()=>{ // clear UI when track ends
+  $nowPlaying.style.display='none';
+  $nowTitle.textContent='';
+  if(playingRow){
+    const oldBtn=playingRow.querySelector('.play-btn');
+    if(oldBtn){oldBtn.classList.remove('playing');oldBtn.innerHTML='▶️';}
+    playingRow.classList.remove('playing');
+    playingRow=null;
+  }
+});
+player.addEventListener('timeupdate',()=>{
+  if($nowTime && player.duration){
+    const cur = formatRuntime(player.currentTime);
+    const tot = formatRuntime(player.duration);
+    $nowTime.textContent = `${cur} / ${tot}`;
+  }
+});
+  let playingRow = null;
+  let currentDocs = [];
+  let recentTracks = JSON.parse(localStorage.getItem('tesseraRecent')||'[]');
+  let favoriteTracks = JSON.parse(localStorage.getItem('tesseraFavorites')||'[]');
+  let audioCtx = null;
+
+  
+  function setStatus(msg, err){
+    $status.textContent = msg || "";
+    $status.style.color = err ? "#c96a6a" : "#7a7d7e";
+  }
+  const esc = s=>{const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;};
+
+  // ----- licence helpers -------------------------------------------------
+  function getLicenseText(doc){let u=doc.licenseurl;if(Array.isArray(u))u=u[0];if(!u)return"";if(/publicdomain\/zero/.test(u))return"CC0";if(/by-nc-nd/.test(u))return"CC BY-NC-ND";if(/by-nc/.test(u))return"CC BY-NC";if(/by\//.test(u))return"CC BY";if(/publicdomain/.test(u))return"Public Domain";return"CC";}
+  function isFreeLicense(doc){let u=doc.licenseurl;if(Array.isArray(u))u=u[0];if(!u)return true;return /publicdomain|creativecommons\.org\/licenses\/by/.test(u);}
+  function formatRuntime(v){if(!v) return "";const n=parseFloat(v);if(isNaN(n))return String(v);if(n<120)return Math.round(n)+"s";const m=Math.floor(n/60), s=Math.round(n%60);return m+":"+(s<10?"0":"")+s;}
+
+  // ----- query building ---------------------------------------------------
+  function buildQuery(term){let q="mediatype:audio";if(term && term.trim())q+=" AND "+term.trim().toLowerCase();return q;}
+
+  // ----- core rendering (used by both normal & random searches) ----------
+  function renderResults(docs){
+    $results.innerHTML = "";
+    const frag=document.createDocumentFragment();
+    docs.forEach(doc=>{
+      const row=document.createElement('div');row.className='result-row';row.dataset.doc=JSON.stringify(doc);
+      // thumbnail
+      const thumb=document.createElement('div');thumb.className='thumb';const img=document.createElement('img');img.src=`https://archive.org/services/img/${doc.identifier}`;img.onerror=()=>{thumb.innerHTML='<span class="icon">♫</span>';};thumb.appendChild(img);
+      // title/uploader
+      const titleDiv=document.createElement('div');titleDiv.className='title';titleDiv.textContent=doc.title||'(no title)';
+      const uploaderDiv=document.createElement('div');uploaderDiv.className='uploader';uploaderDiv.textContent=doc.creator||'';
+      // licence & runtime
+      const licDiv=document.createElement('div');licDiv.className='license';licDiv.textContent=getLicenseText(doc);
+      const rtDiv=document.createElement('div');rtDiv.className='runtime';rtDiv.textContent=formatRuntime(doc.runtime);
+      // play button
+      const playBtn=document.createElement('button');playBtn.className='play-btn';playBtn.title='Play / Stop';playBtn.innerHTML='▶️';
+      // download button
+      const dlBtn=document.createElement('a');dlBtn.className='dl-btn';dlBtn.textContent='Save';dlBtn.href='#';dlBtn.target='_blank';
+      // favorite button
+      const favBtn=document.createElement('button');
+      favBtn.className='fav-btn';
+      favBtn.title='Add/Remove favorite';
+      if (favoriteTracks.some(d=>d.identifier===doc.identifier)) {
+        favBtn.textContent='★';
+        favBtn.classList.add('active');
+      } else {
+        favBtn.textContent='☆';
+      }
+      row.append(thumb,titleDiv,licDiv,rtDiv,playBtn,dlBtn,favBtn);
+      // favorite toggle logic
+      favBtn.addEventListener('click',()=>{
+        const idx=favoriteTracks.findIndex(d=>d.identifier===doc.identifier);
+        if(idx>=0){
+          favoriteTracks.splice(idx,1);
+          favBtn.textContent='☆';
+          favBtn.classList.remove('active');
+        } else {
+          favoriteTracks.push(doc);
+          favBtn.textContent='★';
+          favBtn.classList.add('active');
+        }
+        localStorage.setItem('tesseraFavorites', JSON.stringify(favoriteTracks));
+      });
+      frag.appendChild(row);
+
+      // play logic
+      playBtn.addEventListener('click',()=>handlePlayRow(row,doc,playBtn));
+      // download logic
+      dlBtn.addEventListener('click',async ev=>{ev.preventDefault();await downloadFile(doc);});
+    });
+    $results.appendChild(frag);
+    currentDocs=docs;
+    setStatus(`${docs.length} results found.`);
+  }
+
+  // ----- normal search ---------------------------------------------------
+  async function doSearch(term){
+    setStatus('Searching archive.org…');
+    const api=`https://archive.org/advancedsearch.php?q=${encodeURIComponent(buildQuery(term))}&fl[]=identifier,mediatype,title,creator,runtime,licenseurl&rows=20&output=json&sort[]=downloads%20desc`;
+    try{const resp=await fetch(api);if(!resp.ok)throw new Error(resp.status+' '+resp.statusText);const data=await resp.json();let docs=(data.response&&data.response.docs)||[];if($free.checked){const filtered=docs.filter(isFreeLicense);if(filtered.length)docs=filtered;}renderResults(docs);}catch(e){console.error(e);setStatus('Error: '+e.message,true);}
+  }
+
+  // ----- random page (used by Hit Me) ------------------------------------
+  async function fetchRandomPage(){
+    const randomPage = Math.floor(Math.random() * 50) + 1; // up to page 50
+    const api=`https://archive.org/advancedsearch.php?q=${encodeURIComponent(buildQuery('-quran'))}&fl[]=identifier,mediatype,title,creator,runtime,licenseurl&rows=200&page=${randomPage}&output=json&sort[]=downloads%20desc`;
+    try{
+        const resp=await fetch(api);
+        if(!resp.ok) throw new Error(resp.status+' '+resp.statusText);
+        const data=await resp.json();
+        let pool=(data.response&&data.response.docs)||[];
+        if($free.checked){pool=pool.filter(isFreeLicense);}
+        // Prioritize music, speech, book, poetry entries
+        const priorityRegex = /music|song|instrumental|speech|poetry|book/i;
+        const prioritized = pool.filter(doc => priorityRegex.test(doc.title||''));
+        const others = pool.filter(doc => !priorityRegex.test(doc.title||''));
+        // Shuffle each group
+        const shuffle = arr=>arr.sort(()=>0.5-Math.random());
+        const shuffledPrioritized = shuffle(prioritized);
+        const shuffledOthers = shuffle(others);
+        // Combine, giving priority to the first group
+        const combined = shuffledPrioritized.concat(shuffledOthers);
+        const sample = combined.slice(0,20);
+        renderResults(sample);
+    }catch(e){
+        console.error(e);
+        setStatus('Random fetch error: '+e.message,true);
+    }
+}
+
+  // ----- play a row ------------------------------------------------------
+  async function handlePlayRow(row,doc,btn){
+    if(playingRow && playingRow!==row){player.pause();const oldBtn=playingRow.querySelector('.play-btn');if(oldBtn){oldBtn.classList.remove('playing');oldBtn.innerHTML='▶️';}playingRow.classList.remove('playing');}
+    if(playingRow===row && !player.paused){player.pause();btn.classList.remove('playing');btn.innerHTML='▶️';row.classList.remove('playing');playingRow=null;$waveform.style.display='none';return;}
+    try{const metaResp=await fetch(`https://archive.org/metadata/${doc.identifier}`);if(!metaResp.ok)throw new Error('metadata error');const meta=await metaResp.json();const files=meta.files||[];const fmt=files.find(f=>/\.(mp3|ogg|flac|wav)$/i.test(f.name));if(!fmt){setStatus('No playable file – use Save.',false);return;}const src=`https://archive.org/download/${doc.identifier}/${fmt.name}`;player.src=src;await player.play();btn.classList.add('playing');btn.innerHTML='⏹';row.classList.add('playing');playingRow=row;$nowTitle.textContent = doc.title || '(no title)';
+        $nowTitle.dataset.runtime = doc.runtime || '';
+        // update recent tracks
+        recentTracks.unshift(doc);
+        if (recentTracks.length > 20) recentTracks.pop();
+        localStorage.setItem('tesseraRecent', JSON.stringify(recentTracks));
+        $nowPlaying.style.display = 'flex';
+        drawWaveform(src);}catch(e){console.error(e);setStatus('Playback error.',true);}
+  }
+
+  // ----- download helper -------------------------------------------------
+  async function downloadFile(doc){
+    try{
+        const metaResp=await fetch(`https://archive.org/metadata/${doc.identifier}`);
+        if(!metaResp.ok) throw new Error('metadata error');
+        const meta=await metaResp.json();
+        const files=meta.files||[];
+        const fmt=files.find(f=>/\.(mp3|ogg|flac|wav)$/i.test(f.name));
+        if(fmt){
+            const url=`https://archive.org/download/${doc.identifier}/${fmt.name}`;
+            // Fetch the file as a Blob and trigger download
+            const resp = await fetch(url);
+            if(!resp.ok) throw new Error('file download error');
+            const blob = await resp.blob();
+            const a = document.createElement('a');
+            const blobUrl = URL.createObjectURL(blob);
+            a.href = blobUrl;
+            a.download = fmt.name; // suggest filename
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+        }else{
+            // Fallback: open the archive page if no direct file found
+            window.open(`https://archive.org/details/${doc.identifier}`,'_blank');
+        }
+    }catch(e){
+        console.error(e);
+        setStatus('Download failed.',true);
+    }
+}
+
+  // ----- waveform drawing -----------------------------------------------
+  async function drawWaveform(url){if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();try{const resp=await fetch(url);const arr=await resp.arrayBuffer();const buf=await audioCtx.decodeAudioData(arr);const data=buf.getChannelData(0);const canvas=$waveform;const dpr=window.devicePixelRatio||1;canvas.width=canvas.offsetWidth*dpr;canvas.height=canvas.offsetHeight*dpr;const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.scale(dpr,dpr);ctx.fillStyle='#5a8a6a';const step=Math.max(1,Math.floor(data.length/canvas.offsetWidth));const amp=canvas.offsetHeight/2;for(let i=0;i<canvas.offsetWidth;i++){let min=1.0,max=-1.0;for(let j=0;j<step;j++){const datum=data[(i*step)+j];if(datum<min)min=datum;if(datum>max)max=datum;}ctx.fillRect(i,(1+min)*amp,1,Math.max(1,(max-min)*amp));}canvas.style.display='block';}catch(e){console.error('waveform error',e);$waveform.style.display='none';}}
+
+  // ----- Hit Me handler --------------------------------------------------
+  async function hitMeHandler(event){
+    await fetchRandomPage();
+  }
+
+  // ----- Ohyhuup handler ------------------------------------------------
+  function ohyhuupHandler(){
+    if(!playingRow){setStatus('No track playing.',true);return;}
+    const doc=JSON.parse(playingRow.dataset.doc);
+    const term=doc.creator||doc.title.split(' ')[0];
+    doSearch(term);
+  }
+
+  // ----- UI wiring ------------------------------------------------------
+  $btn.addEventListener('click',()=>doSearch($search.value));
+  $search.addEventListener('keypress',e=>{if(e.key==='Enter')doSearch($search.value);});
+  $free.addEventListener('change',()=>doSearch($search.value));
+
+  // Hit Me and Ohyhuup buttons only – no preset handling needed
+  $hitMe.addEventListener('click',hitMeHandler);
+$recentBtn.addEventListener('click',()=>{renderResults(recentTracks);});
+$favBtn.addEventListener('click',()=>{renderResults(favoriteTracks);});
+$stopBtn.addEventListener('click',()=>{
+  if(!player.paused){
+    player.pause();
+    setStatus('Playback stopped.', false);
+  }
+  // clear UI
+  $nowPlaying.style.display='none';
+  $nowTitle.textContent='';
+  if(playingRow){
+    const oldBtn=playingRow.querySelector('.play-btn');
+    if(oldBtn){oldBtn.classList.remove('playing');oldBtn.innerHTML='▶️';}
+    playingRow.classList.remove('playing');
+    playingRow=null;
+  }
+});
+  $ohyhuuup.addEventListener('click',ohyhuuupHandler);
+
+  // ----- initial random opening screen -----------------------------------
+  (function(){fetchRandomPage();})();
+
+  window.addEventListener('beforeunload',()=>{player.pause();});
+})();
+</script>
+</body>
+</html>
